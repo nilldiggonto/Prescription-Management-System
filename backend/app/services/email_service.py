@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
+from email.message import EmailMessage
 from pathlib import Path
 
 import aiosmtplib
 from jinja2 import Environment, FileSystemLoader
-from email.message import EmailMessage
 
 from app.core.config import Settings, get_settings
 
@@ -13,23 +13,24 @@ _jinja_env = Environment(loader=FileSystemLoader(str(_TEMPLATES_DIR)), autoescap
 
 class EmailSender(ABC):
     @abstractmethod
-    async def send_verification_email(self, to: str, token: str) -> None: ...
+    async def send_verification_otp(self, to: str, otp: str, expire_minutes: int) -> None: ...
 
 
 class SMTPEmailSender(EmailSender):
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
 
-    async def send_verification_email(self, to: str, token: str) -> None:
-        verify_url = f"{self._settings.frontend_url}/verify-email?token={token}"
-        template = _jinja_env.get_template("verify_email.html")
-        html_body = template.render(verify_url=verify_url)
+    async def send_verification_otp(self, to: str, otp: str, expire_minutes: int) -> None:
+        template = _jinja_env.get_template("verify_otp.html")
+        html_body = template.render(otp=otp, expire_minutes=expire_minutes)
 
         message = EmailMessage()
         message["From"] = self._settings.smtp_from_email
         message["To"] = to
-        message["Subject"] = "Verify your email address"
-        message.set_content(f"Please verify your email by visiting: {verify_url}")
+        message["Subject"] = "Your verification code"
+        message.set_content(
+            f"Your verification code is: {otp}\nThis code expires in {expire_minutes} minutes."
+        )
         message.add_alternative(html_body, subtype="html")
 
         await aiosmtplib.send(

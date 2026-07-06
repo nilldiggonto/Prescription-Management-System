@@ -20,8 +20,8 @@ class FakeEmailSender(EmailSender):
     def __init__(self) -> None:
         self.sent: list[dict[str, str]] = []
 
-    async def send_verification_email(self, to: str, token: str) -> None:
-        self.sent.append({"to": to, "token": token})
+    async def send_verification_otp(self, to: str, otp: str, expire_minutes: int) -> None:
+        self.sent.append({"to": to, "otp": otp, "expire_minutes": str(expire_minutes)})
 
 
 @pytest_asyncio.fixture

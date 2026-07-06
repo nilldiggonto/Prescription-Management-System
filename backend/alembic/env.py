@@ -9,7 +9,7 @@ from alembic import context
 
 from app.core.config import get_settings
 from app.core.database import Base
-from app.models import EmailVerificationToken, User  # noqa: F401  ensures models are registered on Base.metadata
+from app.models import EmailVerificationOTP, User  # noqa: F401  ensures models are registered on Base.metadata
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

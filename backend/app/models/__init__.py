@@ -1,4 +1,4 @@
-from app.models.tokens import EmailVerificationToken
+from app.models.otp import EmailVerificationOTP
 from app.models.user import User, UserRole
 
-__all__ = ["User", "UserRole", "EmailVerificationToken"]
+__all__ = ["User", "UserRole", "EmailVerificationOTP"]

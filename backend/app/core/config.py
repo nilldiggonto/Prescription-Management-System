@@ -13,7 +13,8 @@ class Settings(BaseSettings):
     database_url: str
     test_database_url: str | None = None
 
-    email_verification_token_expire_hours: int = 24
+    email_verification_otp_expire_minutes: int = 10
+    email_verification_otp_max_attempts: int = 5
 
     smtp_host: str
     smtp_port: int = 587

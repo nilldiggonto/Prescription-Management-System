@@ -1,5 +1,6 @@
 import hashlib
 import secrets
+import string
 
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
@@ -22,5 +23,9 @@ def generate_token() -> str:
     return secrets.token_urlsafe(32)
 
 
-def hash_token(raw_token: str) -> str:
-    return hashlib.sha256(raw_token.encode("utf-8")).hexdigest()
+def generate_otp(length: int = 6) -> str:
+    return "".join(secrets.choice(string.digits) for _ in range(length))
+
+
+def hash_secret(raw_value: str) -> str:
+    return hashlib.sha256(raw_value.encode("utf-8")).hexdigest()

@@ -23,6 +23,8 @@ async def test_register_success(client: AsyncClient, db_session, fake_email_send
 
     assert len(fake_email_sender.sent) == 1
     assert fake_email_sender.sent[0]["to"] == "doctor@example.com"
+    assert fake_email_sender.sent[0]["otp"].isdigit()
+    assert len(fake_email_sender.sent[0]["otp"]) == 6
 
 
 async def test_register_duplicate_email_returns_409(client: AsyncClient):

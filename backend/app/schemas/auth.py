@@ -15,5 +15,10 @@ class RegisterRequest(BaseModel):
         return value
 
 
+class VerifyEmailRequest(BaseModel):
+    email: EmailStr
+    otp: str = Field(pattern=r"^\d{6}$", description="6-digit verification code")
+
+
 class VerifyEmailResponse(BaseModel):
     message: str

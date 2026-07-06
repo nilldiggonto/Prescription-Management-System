@@ -10,19 +10,17 @@
               <td>
                 <h2 style="color: #111827; margin-top: 0;">Verify your email address</h2>
                 <p style="color: #374151; font-size: 15px; line-height: 1.5;">
-                  Thanks for signing up. Please confirm your email address by clicking the button below.
-                  This link will expire soon, so please verify promptly.
+                  Enter this code to verify your email address:
                 </p>
                 <p style="text-align: center; margin: 32px 0;">
-                  <a href="{{ verify_url }}"
-                     style="background-color: #2563eb; color: #ffffff; text-decoration: none;
-                            padding: 12px 24px; border-radius: 6px; font-weight: bold; display: inline-block;">
-                    Verify Email
-                  </a>
+                  <span style="display: inline-block; background-color: #eff6ff; color: #1d4ed8;
+                               font-size: 36px; font-weight: bold; letter-spacing: 10px;
+                               padding: 16px 24px; border-radius: 8px; font-family: 'Courier New', monospace;">
+                    {{ otp }}
+                  </span>
                 </p>
-                <p style="color: #6b7280; font-size: 13px; line-height: 1.5;">
-                  If the button above doesn't work, copy and paste this link into your browser:<br />
-                  <a href="{{ verify_url }}" style="color: #2563eb;">{{ verify_url }}</a>
+                <p style="color: #6b7280; font-size: 13px; line-height: 1.5; text-align: center;">
+                  This code expires in {{ expire_minutes }} minutes.
                 </p>
                 <p style="color: #9ca3af; font-size: 12px; margin-top: 32px;">
                   If you didn't create an account, you can safely ignore this email.
