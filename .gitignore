@@ -1,0 +1,24 @@
+# Backend (Python)
+backend/.venv/
+backend/__pycache__/
+backend/**/__pycache__/
+backend/.env
+backend/.env.*
+!backend/.env.example
+backend/.pytest_cache/
+backend/.ruff_cache/
+*.pyc
+
+# Frontend (Node)
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+docs/plans/*
