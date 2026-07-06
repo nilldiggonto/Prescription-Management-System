@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { MenuIcon, Stethoscope } from "lucide-react";
 
@@ -10,6 +12,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { useAuth } from "@/lib/auth-context";
 
 const NAV_LINKS = [
   { href: "#features", label: "Features" },
@@ -26,6 +29,39 @@ function Logo() {
       </span>
       Rivet
     </Link>
+  );
+}
+
+function AuthButtons({ fullWidth = false }: { fullWidth?: boolean }) {
+  const { user, isLoading, logout } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className={fullWidth ? "flex flex-col gap-2" : "flex items-center gap-2"}>
+        <div className="h-8 w-20 animate-pulse rounded-md bg-muted" />
+        <div className="h-8 w-28 animate-pulse rounded-md bg-muted" />
+      </div>
+    );
+  }
+
+  if (user) {
+    return (
+      <div className={fullWidth ? "flex flex-col gap-2" : "flex items-center gap-2"}>
+        <Button variant="outline" render={<Link href="/dashboard" />}>
+          Dashboard
+        </Button>
+        <Button onClick={() => void logout()}>Log out</Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className={fullWidth ? "flex flex-col gap-2" : "flex items-center gap-2"}>
+      <Button variant={fullWidth ? "outline" : "ghost"} render={<Link href="/login" />}>
+        Sign in
+      </Button>
+      <Button render={<Link href="/register" />}>Get Started Free</Button>
+    </div>
   );
 }
 
@@ -49,10 +85,7 @@ export function SiteHeader() {
 
         <div className="hidden items-center gap-2 md:flex">
           <ThemeToggle />
-          <Button variant="ghost" render={<Link href="/login" />}>
-            Sign in
-          </Button>
-          <Button render={<Link href="/register" />}>Get Started Free</Button>
+          <AuthButtons />
         </div>
 
         <div className="flex items-center gap-1 md:hidden">
@@ -80,11 +113,8 @@ export function SiteHeader() {
                   </a>
                 ))}
               </nav>
-              <div className="mt-auto flex flex-col gap-2 p-4">
-                <Button variant="outline" render={<Link href="/login" />}>
-                  Sign in
-                </Button>
-                <Button render={<Link href="/register" />}>Get Started Free</Button>
+              <div className="mt-auto p-4">
+                <AuthButtons fullWidth />
               </div>
             </SheetContent>
           </Sheet>
