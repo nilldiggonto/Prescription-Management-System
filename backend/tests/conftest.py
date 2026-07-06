@@ -19,9 +19,13 @@ test_engine = create_async_engine(settings.test_database_url, future=True, poolc
 class FakeEmailSender(EmailSender):
     def __init__(self) -> None:
         self.sent: list[dict[str, str]] = []
+        self.password_reset_sent: list[dict[str, str]] = []
 
     async def send_verification_otp(self, to: str, otp: str, expire_minutes: int) -> None:
         self.sent.append({"to": to, "otp": otp, "expire_minutes": str(expire_minutes)})
+
+    async def send_password_reset_otp(self, to: str, otp: str, expire_minutes: int) -> None:
+        self.password_reset_sent.append({"to": to, "otp": otp, "expire_minutes": str(expire_minutes)})
 
 
 @pytest_asyncio.fixture
@@ -60,3 +64,14 @@ async def client(db_session: AsyncSession, fake_email_sender: FakeEmailSender) -
         yield ac
 
     app.dependency_overrides.clear()
+
+
+async def register_and_verify_user(
+    client: AsyncClient, fake_email_sender: FakeEmailSender, *, email: str, password: str
+) -> None:
+    register_response = await client.post("/api/v1/auth/register", json={"email": email, "password": password})
+    assert register_response.status_code == 201
+
+    otp = next(entry["otp"] for entry in fake_email_sender.sent if entry["to"] == email)
+    verify_response = await client.post("/api/v1/auth/verify-email", json={"email": email, "otp": otp})
+    assert verify_response.status_code == 200

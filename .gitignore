@@ -22,3 +22,4 @@ frontend/.env.*
 .idea/
 .DS_Store
 docs/plans/*
+wrap.md

@@ -16,6 +16,15 @@ class Settings(BaseSettings):
     email_verification_otp_expire_minutes: int = 10
     email_verification_otp_max_attempts: int = 5
 
+    access_token_expire_days: int = 7
+    access_token_remember_me_expire_days: int = 30
+
+    cookie_secure: bool = False
+    cookie_samesite: str = "lax"
+
+    password_reset_otp_expire_minutes: int = 10
+    password_reset_otp_max_attempts: int = 5
+
     smtp_host: str
     smtp_port: int = 587
     smtp_username: str
