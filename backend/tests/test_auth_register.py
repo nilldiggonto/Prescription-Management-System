@@ -45,3 +45,17 @@ async def test_register_invalid_email_returns_422(client: AsyncClient):
 async def test_register_short_password_returns_422(client: AsyncClient):
     response = await client.post("/api/v1/auth/register", json={"email": "shortpw@example.com", "password": "abc"})
     assert response.status_code == 422
+
+
+async def test_register_password_without_digit_returns_422(client: AsyncClient):
+    response = await client.post(
+        "/api/v1/auth/register", json={"email": "noletters@example.com", "password": "allletters"}
+    )
+    assert response.status_code == 422
+
+
+async def test_register_password_without_letter_returns_422(client: AsyncClient):
+    response = await client.post(
+        "/api/v1/auth/register", json={"email": "nodigits@example.com", "password": "12345678"}
+    )
+    assert response.status_code == 422

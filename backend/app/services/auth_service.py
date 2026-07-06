@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 
-from fastapi import HTTPException, status
+from fastapi import BackgroundTasks, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings
@@ -24,7 +24,7 @@ class AuthService:
         self._users = UserRepository(session)
         self._tokens = EmailVerificationTokenRepository(session)
 
-    async def register(self, *, email: str, password: str) -> User:
+    async def register(self, *, email: str, password: str, background_tasks: BackgroundTasks) -> User:
         existing = await self._users.get_by_email(email)
         if existing is not None:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email is already registered")
@@ -40,7 +40,8 @@ class AuthService:
         await self._session.commit()
         await self._session.refresh(user)
 
-        await self._email_sender.send_verification_email(to=user.email, token=raw_token)
+        # Scheduled after the response so registration doesn't block on SMTP latency.
+        background_tasks.add_task(self._email_sender.send_verification_email, to=user.email, token=raw_token)
 
         return user
 
