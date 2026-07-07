@@ -11,6 +11,7 @@ from app.core.config import get_settings
 from app.core.database import Base
 from app.models import (  # noqa: F401  ensures models are registered on Base.metadata
     AccessToken,
+    DoctorProfile,
     EmailVerificationOTP,
     PasswordResetOTP,
     User,
