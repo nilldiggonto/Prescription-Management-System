@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { ArrowRightIcon, CheckIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Reveal } from "@/components/reveal";
+import { AuthCtaButton } from "@/components/marketing/auth-cta-button";
 
 const TRUST_POINTS = ["No credit card required", "Free forever plan", "Cancel anytime"];
 
@@ -38,10 +38,10 @@ export function HeroSection() {
 
         <Reveal delay={225}>
           <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Button size="lg" className="h-11 px-6 text-base" render={<Link href="/register" />}>
+            <AuthCtaButton size="lg" className="h-11 px-6 text-base">
               Get Started Free
               <ArrowRightIcon />
-            </Button>
+            </AuthCtaButton>
             <Button
               size="lg"
               variant="outline"

@@ -1,9 +1,9 @@
-import Link from "next/link";
 import { CheckIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Reveal } from "@/components/reveal";
+import { AuthCtaButton } from "@/components/marketing/auth-cta-button";
 import { cn } from "@/lib/utils";
 
 interface Tier {
@@ -14,7 +14,6 @@ interface Tier {
   limit: string;
   features: string[];
   cta: string;
-  href: string;
   highlighted?: boolean;
 }
 
@@ -33,7 +32,6 @@ const TIERS: Tier[] = [
       "Community support",
     ],
     cta: "Start Free",
-    href: "/register",
   },
   {
     name: "Pro",
@@ -48,7 +46,6 @@ const TIERS: Tier[] = [
       "Priority email support",
     ],
     cta: "Start Pro",
-    href: "/register?plan=pro",
     highlighted: true,
   },
   {
@@ -64,7 +61,6 @@ const TIERS: Tier[] = [
       "Dedicated support",
     ],
     cta: "Get Premium",
-    href: "/register?plan=premium",
   },
 ];
 
@@ -113,13 +109,12 @@ export function PricingSection() {
                   ))}
                 </ul>
 
-                <Button
+                <AuthCtaButton
                   className="mt-8"
                   variant={tier.highlighted ? "default" : "outline"}
-                  render={<Link href={tier.href} />}
                 >
                   {tier.cta}
-                </Button>
+                </AuthCtaButton>
               </div>
             </Reveal>
           ))}
