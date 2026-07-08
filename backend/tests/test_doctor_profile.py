@@ -18,6 +18,8 @@ PROFILE_PAYLOAD = {
     "phone": "+8801700000000",
     "signature_url": None,
     "logo_url": None,
+    "watermark_url": None,
+    "template": "modern",
 }
 
 
@@ -64,6 +66,7 @@ async def test_put_creates_profile(client: AsyncClient, fake_email_sender: FakeE
     body = response.json()
     assert body["full_name"] == PROFILE_PAYLOAD["full_name"]
     assert body["registration_number"] == PROFILE_PAYLOAD["registration_number"]
+    assert body["template"] == "modern"
 
     get_response = await client.get("/api/v1/doctor-profile/me")
     assert get_response.status_code == 200
@@ -87,6 +90,16 @@ async def test_put_updates_existing_profile(client: AsyncClient, fake_email_send
     assert body["id"] == first_id
     assert body["full_name"] == "Dr. Jane A. Doe"
     assert body["hospital_name"] == "New Hospital"
+
+
+async def test_put_defaults_template_to_classic_when_omitted(client: AsyncClient, fake_email_sender: FakeEmailSender):
+    await _login_doctor(client, fake_email_sender)
+    csrf_token = client.cookies.get("csrf_token")
+
+    payload = {k: v for k, v in PROFILE_PAYLOAD.items() if k != "template"}
+    response = await client.put("/api/v1/doctor-profile/me", json=payload, headers={"X-CSRF-Token": csrf_token})
+    assert response.status_code == 200
+    assert response.json()["template"] == "classic"
 
 
 async def test_put_without_csrf_header_returns_403(client: AsyncClient, fake_email_sender: FakeEmailSender):

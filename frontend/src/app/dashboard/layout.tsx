@@ -28,10 +28,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        <DashboardHeader />
-        <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">{children}</div>
+      <div className="print:hidden">
+        <AppSidebar />
+      </div>
+      <SidebarInset className="print:m-0">
+        <div className="print:hidden">
+          <DashboardHeader />
+        </div>
+        <div className="flex flex-1 flex-col gap-6 p-4 md:p-6 print:block print:gap-0 print:p-0">{children}</div>
       </SidebarInset>
     </SidebarProvider>
   );

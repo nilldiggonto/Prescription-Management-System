@@ -11,12 +11,14 @@ const PAGE_TITLES: Record<string, string> = {
   "/dashboard/prescriptions/new": "New Prescription",
   "/dashboard/prescriptions": "Prescriptions",
   "/dashboard/patients": "Patients",
+  "/dashboard/patients/new": "Add Patient",
   "/dashboard/settings": "Settings",
 };
 
 export function DashboardHeader() {
   const pathname = usePathname();
-  const title = PAGE_TITLES[pathname] ?? "Dashboard";
+  const title =
+    PAGE_TITLES[pathname] ?? (pathname.startsWith("/dashboard/prescriptions/") ? "Prescription" : "Dashboard");
 
   return (
     <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">

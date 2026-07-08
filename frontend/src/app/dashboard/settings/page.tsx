@@ -1,13 +1,15 @@
-import { SettingsIcon } from "lucide-react";
-
-import { ComingSoon } from "@/components/dashboard/coming-soon";
+import { DoctorProfileForm } from "@/components/settings/doctor-profile-form";
 
 export default function SettingsPage() {
   return (
-    <ComingSoon
-      icon={SettingsIcon}
-      title="Doctor profile settings are coming soon"
-      description="Your name, clinic, and signature details will live here — used as the letterhead on every prescription you create."
-    />
+    <div>
+      <h2 className="text-2xl font-semibold tracking-tight">Doctor profile</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Set this up once — it&apos;s used as the letterhead on every prescription you create.
+      </p>
+      <div className="mt-6">
+        <DoctorProfileForm />
+      </div>
+    </div>
   );
 }

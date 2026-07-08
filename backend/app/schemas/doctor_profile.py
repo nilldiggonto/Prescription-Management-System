@@ -3,6 +3,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.models.doctor_profile import DoctorProfileTemplate
+
 
 class DoctorProfileRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -17,6 +19,8 @@ class DoctorProfileRead(BaseModel):
     phone: str | None
     signature_url: str | None
     logo_url: str | None
+    watermark_url: str | None
+    template: DoctorProfileTemplate
     created_at: datetime
     updated_at: datetime
 
@@ -31,3 +35,5 @@ class DoctorProfileWrite(BaseModel):
     phone: str | None = Field(default=None, max_length=30)
     signature_url: str | None = Field(default=None, max_length=500)
     logo_url: str | None = Field(default=None, max_length=500)
+    watermark_url: str | None = Field(default=None, max_length=500)
+    template: DoctorProfileTemplate = DoctorProfileTemplate.CLASSIC
