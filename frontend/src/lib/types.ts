@@ -19,6 +19,12 @@ export interface DoctorProfile {
 
 export type PatientGender = "male" | "female" | "other";
 
+export const GENDER_LABELS: Record<PatientGender, string> = {
+  male: "Male",
+  female: "Female",
+  other: "Other",
+};
+
 export interface Patient {
   id: string;
   full_name: string;
@@ -27,6 +33,10 @@ export interface Patient {
   phone: string | null;
   address: string | null;
   created_at: string;
+}
+
+export function formatPatientOption(patient: Patient): string {
+  return patient.phone ? `${patient.full_name} — ${patient.phone}` : patient.full_name;
 }
 
 export interface Medicine {

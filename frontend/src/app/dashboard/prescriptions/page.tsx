@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { FilePlus2Icon, FileTextIcon } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { FilePlus2Icon, FileTextIcon, XIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -10,19 +11,39 @@ import { ComingSoon } from "@/components/dashboard/coming-soon";
 import { apiFetch } from "@/lib/api";
 import type { Prescription } from "@/lib/types";
 
-export default function PrescriptionsPage() {
+function PrescriptionsPageContent() {
+  const searchParams = useSearchParams();
+  const patientId = searchParams.get("patient_id");
+  const patientName = searchParams.get("patient_name");
+
   const [prescriptions, setPrescriptions] = React.useState<Prescription[] | null>(null);
 
   React.useEffect(() => {
-    void apiFetch<Prescription[]>("/prescriptions").then(setPrescriptions);
-  }, []);
+    // Resetting to a loading state when the patient filter changes, before re-fetching —
+    // synchronizing with the external API, which is exactly what effects are for.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPrescriptions(null);
+    const path = patientId ? `/prescriptions?patient_id=${patientId}` : "/prescriptions";
+    void apiFetch<Prescription[]>(path).then(setPrescriptions);
+  }, [patientId]);
 
   return (
     <div>
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-semibold tracking-tight">Prescriptions</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Every prescription you&apos;ve created.</p>
+          <h2 className="text-2xl font-semibold tracking-tight">
+            {patientId && patientName ? `Prescriptions for ${patientName}` : "Prescriptions"}
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {patientId ? (
+              <Link href="/dashboard/prescriptions" className="inline-flex items-center gap-1 underline underline-offset-4">
+                <XIcon className="size-3" />
+                Clear filter, show everyone
+              </Link>
+            ) : (
+              "Every prescription you've created."
+            )}
+          </p>
         </div>
         <Button render={<Link href="/dashboard/prescriptions/new" />}>
           <FilePlus2Icon />
@@ -36,8 +57,8 @@ export default function PrescriptionsPage() {
         ) : prescriptions.length === 0 ? (
           <ComingSoon
             icon={FileTextIcon}
-            title="No prescriptions yet"
-            description="Create your first prescription to see it here."
+            title={patientId ? "No prescriptions for this patient yet" : "No prescriptions yet"}
+            description="Create a prescription to see it here."
           />
         ) : (
           <Table>
@@ -71,5 +92,13 @@ export default function PrescriptionsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function PrescriptionsPage() {
+  return (
+    <React.Suspense fallback={<p className="text-sm text-muted-foreground">Loading…</p>}>
+      <PrescriptionsPageContent />
+    </React.Suspense>
   );
 }

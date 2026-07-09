@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { FilePlus2Icon, PlusIcon, Trash2Icon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -18,7 +18,7 @@ import { ComingSoon } from "@/components/dashboard/coming-soon";
 import { PrescriptionPadFrame, PrescriptionRxLabel } from "@/components/prescriptions/prescription-pad";
 import { medicineItemSchema, patientAgeToNumber } from "@/lib/validation";
 import { apiFetch, ApiError } from "@/lib/api";
-import type { DoctorProfile, Patient, Prescription } from "@/lib/types";
+import { GENDER_LABELS, formatPatientOption, type DoctorProfile, type Patient, type Prescription } from "@/lib/types";
 
 const prescriptionFormSchema = z.object({
   patient_id: z.string().optional(),
@@ -185,15 +185,20 @@ export default function NewPrescriptionPage() {
                   name="patient_id"
                   control={control}
                   render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
+                    <Select value={field.value} onValueChange={field.onChange} disabled={patients?.length === 0}>
                       <SelectTrigger id="patient_id" className="w-full max-w-sm">
-                        <SelectValue placeholder={patients === null ? "Loading patients…" : "Select a patient"} />
+                        <SelectValue>
+                          {(value: string | null) => {
+                            const selected = patients?.find((patient) => patient.id === value);
+                            if (selected) return formatPatientOption(selected);
+                            return patients === null ? "Loading patients…" : "Select a patient";
+                          }}
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         {patients?.map((patient) => (
                           <SelectItem key={patient.id} value={patient.id}>
-                            {patient.full_name}
-                            {patient.age ? ` (${patient.age})` : ""}
+                            {formatPatientOption(patient)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -227,7 +232,7 @@ export default function NewPrescriptionPage() {
                     render={({ field }) => (
                       <Select value={field.value} onValueChange={field.onChange}>
                         <SelectTrigger id="new_patient_gender" className="w-full">
-                          <SelectValue placeholder="Select" />
+                          <SelectValue>{(value: string | null) => (value ? GENDER_LABELS[value as keyof typeof GENDER_LABELS] : "Select")}</SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="male">Male</SelectItem>

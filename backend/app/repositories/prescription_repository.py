@@ -46,8 +46,12 @@ class PrescriptionRepository:
         )
         return result.scalar_one_or_none()
 
-    async def list_for_doctor(self, doctor_id: uuid.UUID) -> list[Prescription]:
+    async def list_for_doctor(self, doctor_id: uuid.UUID, *, patient_id: uuid.UUID | None = None) -> list[Prescription]:
+        conditions = [Prescription.doctor_id == doctor_id]
+        if patient_id is not None:
+            conditions.append(Prescription.patient_id == patient_id)
+
         result = await self._session.execute(
-            select(Prescription).where(Prescription.doctor_id == doctor_id).order_by(Prescription.created_at.desc())
+            select(Prescription).where(*conditions).order_by(Prescription.created_at.desc())
         )
         return list(result.scalars().all())

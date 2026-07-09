@@ -113,3 +113,27 @@ async def test_create_prescription_requires_patient_source(client: AsyncClient, 
         "/api/v1/prescriptions", json={"medicines": MEDICINES_PAYLOAD}, headers={"X-CSRF-Token": csrf_token}
     )
     assert response.status_code == 422
+
+
+async def test_list_prescriptions_can_filter_by_patient(client: AsyncClient, fake_email_sender: FakeEmailSender):
+    csrf_token = await _login_with_profile(client, fake_email_sender)
+
+    first = await client.post(
+        "/api/v1/prescriptions",
+        json={"new_patient": NEW_PATIENT_PAYLOAD, "medicines": MEDICINES_PAYLOAD},
+        headers={"X-CSRF-Token": csrf_token},
+    )
+    first_patient_id = first.json()["patient"]["id"]
+
+    other_patient_payload = {**NEW_PATIENT_PAYLOAD, "full_name": "Someone Else", "phone": "+8801722222222"}
+    await client.post(
+        "/api/v1/prescriptions",
+        json={"new_patient": other_patient_payload, "medicines": MEDICINES_PAYLOAD},
+        headers={"X-CSRF-Token": csrf_token},
+    )
+
+    response = await client.get("/api/v1/prescriptions", params={"patient_id": first_patient_id})
+    assert response.status_code == 200
+    body = response.json()
+    assert len(body) == 1
+    assert body[0]["patient"]["id"] == first_patient_id

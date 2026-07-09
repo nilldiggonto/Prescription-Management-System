@@ -56,9 +56,11 @@ class PrescriptionService:
         assert payload.new_patient is not None  # enforced by PrescriptionCreate validator
         return await self._patients.create(doctor_id=current_user.id, **payload.new_patient.model_dump())
 
-    async def list_my_prescriptions(self, *, current_user: User) -> list[Prescription]:
+    async def list_my_prescriptions(
+        self, *, current_user: User, patient_id: uuid.UUID | None = None
+    ) -> list[Prescription]:
         _require_doctor(current_user)
-        return await self._prescriptions.list_for_doctor(current_user.id)
+        return await self._prescriptions.list_for_doctor(current_user.id, patient_id=patient_id)
 
     async def get_my_prescription(self, *, current_user: User, prescription_id: uuid.UUID) -> Prescription:
         _require_doctor(current_user)

@@ -11,7 +11,6 @@ const PAGE_TITLES: Record<string, string> = {
   "/dashboard/prescriptions/new": "New Prescription",
   "/dashboard/prescriptions": "Prescriptions",
   "/dashboard/patients": "Patients",
-  "/dashboard/patients/new": "Add Patient",
   "/dashboard/settings": "Settings",
 };
 

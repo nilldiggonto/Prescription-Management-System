@@ -21,8 +21,12 @@ async def create_prescription(
 
 
 @router.get("", response_model=list[PrescriptionRead])
-async def list_prescriptions(current_user: CurrentUser, session: DbSession) -> list[PrescriptionRead]:
-    prescriptions = await PrescriptionService(session).list_my_prescriptions(current_user=current_user)
+async def list_prescriptions(
+    current_user: CurrentUser, session: DbSession, patient_id: uuid.UUID | None = None
+) -> list[PrescriptionRead]:
+    prescriptions = await PrescriptionService(session).list_my_prescriptions(
+        current_user=current_user, patient_id=patient_id
+    )
     return [PrescriptionRead.model_validate(prescription) for prescription in prescriptions]
 
 
