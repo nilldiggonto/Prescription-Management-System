@@ -3,6 +3,7 @@ import uuid
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import Settings
 from app.models.patient import Patient
 from app.models.prescription import Prescription
 from app.models.user import User, UserRole
@@ -10,14 +11,16 @@ from app.repositories.doctor_profile_repository import DoctorProfileRepository
 from app.repositories.patient_repository import PatientRepository
 from app.repositories.prescription_repository import PrescriptionRepository
 from app.schemas.prescription import PrescriptionCreate
+from app.services.subscription_service import SubscriptionService
 
 
 class PrescriptionService:
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(self, session: AsyncSession, settings: Settings) -> None:
         self._session = session
         self._prescriptions = PrescriptionRepository(session)
         self._patients = PatientRepository(session)
         self._doctor_profiles = DoctorProfileRepository(session)
+        self._subscriptions = SubscriptionService(session, settings)
 
     async def create_prescription(self, *, current_user: User, payload: PrescriptionCreate) -> Prescription:
         _require_doctor(current_user)
@@ -28,6 +31,8 @@ class PrescriptionService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Set up your doctor profile before creating a prescription",
             )
+
+        await self._subscriptions.check_can_create_prescription(current_user)
 
         patient = await self._resolve_patient(current_user=current_user, payload=payload)
 

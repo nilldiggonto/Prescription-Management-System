@@ -3,7 +3,7 @@ import uuid
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.user import User
+from app.models.user import User, UserRole
 
 
 class UserRepository:
@@ -23,3 +23,7 @@ class UserRepository:
         self._session.add(user)
         await self._session.flush()
         return user
+
+    async def list_by_role(self, role: UserRole) -> list[User]:
+        result = await self._session.execute(select(User).where(User.role == role).order_by(User.created_at))
+        return list(result.scalars().all())

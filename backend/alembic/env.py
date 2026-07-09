@@ -17,6 +17,7 @@ from app.models import (  # noqa: F401  ensures models are registered on Base.me
     Patient,
     Prescription,
     PrescriptionMedicine,
+    Subscription,
     User,
 )
 

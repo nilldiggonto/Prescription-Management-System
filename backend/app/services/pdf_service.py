@@ -98,7 +98,11 @@ def _patient_summary(patient: Patient, prescription: Prescription) -> list:
     details = [f"<b>Patient:</b> {patient.full_name}"]
     if patient.age is not None:
         details.append(f"<b>Age:</b> {patient.age}")
-    details.append(f"<b>Gender:</b> {patient.gender.value.capitalize()}")
+    # patient.gender is a str-backed enum column; SQLAlchemy returns a plain `str` for
+    # rows loaded via a query (vs. a real enum instance right after in-process construction).
+    # `.capitalize()` works correctly either way — don't call `.value` here, it only exists
+    # on the enum instance and raises AttributeError on the plain-str case.
+    details.append(f"<b>Gender:</b> {patient.gender.capitalize()}")
     if patient.phone:
         details.append(f"<b>Phone:</b> {patient.phone}")
 

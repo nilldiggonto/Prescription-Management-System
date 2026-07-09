@@ -7,7 +7,7 @@ from app.core.config import Settings, get_settings
 from app.core.cookies import ACCESS_TOKEN_COOKIE, CSRF_TOKEN_COOKIE
 from app.core.database import get_db
 from app.core.security import hash_secret
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.repositories.access_token_repository import AccessTokenRepository
 from app.repositories.user_repository import UserRepository
 from app.services.auth_service import AuthService
@@ -46,6 +46,15 @@ async def get_current_user(request: Request, session: DbSession) -> User:
 
 
 CurrentUser = Annotated[User, Depends(get_current_user)]
+
+
+async def get_current_admin(current_user: CurrentUser) -> User:
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
+    return current_user
+
+
+CurrentAdmin = Annotated[User, Depends(get_current_admin)]
 
 
 def verify_csrf_token(request: Request) -> None:

@@ -32,6 +32,11 @@ class Settings(BaseSettings):
     smtp_from_email: str
     smtp_use_tls: bool = True
 
+    stripe_secret_key: str
+    stripe_webhook_secret: str = ""
+    stripe_price_id_pro: str = ""
+    stripe_price_id_premium: str = ""
+
     @property
     def is_development(self) -> bool:
         return self.environment == "development"

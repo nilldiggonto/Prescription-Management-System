@@ -10,6 +10,7 @@ from app.models.user import User
 from app.repositories.access_token_repository import AccessTokenRepository
 from app.repositories.otp_repository import EmailVerificationOTPRepository
 from app.repositories.password_reset_repository import PasswordResetOTPRepository
+from app.repositories.subscription_repository import SubscriptionRepository
 from app.repositories.user_repository import UserRepository
 from app.services.email_service import EmailSender
 
@@ -32,6 +33,7 @@ class AuthService:
         self._otps = EmailVerificationOTPRepository(session)
         self._password_resets = PasswordResetOTPRepository(session)
         self._access_tokens = AccessTokenRepository(session)
+        self._subscriptions = SubscriptionRepository(session)
 
     async def register(self, *, email: str, password: str, background_tasks: BackgroundTasks) -> User:
         existing = await self._users.get_by_email(email)
@@ -39,6 +41,10 @@ class AuthService:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email is already registered")
 
         user = await self._users.create(email=email, hashed_password=hash_password(password))
+        # Every doctor is on the Free plan by default — created eagerly here (rather than
+        # lazily like DoctorProfile) so every service that reads a doctor's plan/usage never
+        # has to special-case a missing row.
+        await self._subscriptions.create(user_id=user.id)
 
         raw_otp = generate_otp()
         expire_minutes = self._settings.email_verification_otp_expire_minutes

@@ -1,7 +1,7 @@
 import uuid
-from datetime import date
+from datetime import date, datetime
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.patient import Patient
@@ -55,3 +55,20 @@ class PrescriptionRepository:
             select(Prescription).where(*conditions).order_by(Prescription.created_at.desc())
         )
         return list(result.scalars().all())
+
+    async def count_since_for_doctor(self, doctor_id: uuid.UUID, since: datetime) -> int:
+        result = await self._session.execute(
+            select(func.count())
+            .select_from(Prescription)
+            .where(Prescription.doctor_id == doctor_id, Prescription.created_at >= since)
+        )
+        return result.scalar_one()
+
+    async def count_since_grouped_by_doctor(self, since: datetime) -> dict[uuid.UUID, int]:
+        """Used by the admin user list to avoid one count query per doctor."""
+        result = await self._session.execute(
+            select(Prescription.doctor_id, func.count())
+            .where(Prescription.created_at >= since)
+            .group_by(Prescription.doctor_id)
+        )
+        return dict(result.all())
