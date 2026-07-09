@@ -129,6 +129,18 @@ export default function NewPrescriptionPage() {
         setProfileMissing(true);
         return;
       }
+      if (error instanceof ApiError && error.status === 429) {
+        setRootError(
+          <>
+            {error.message} —{" "}
+            <Link href="/dashboard/billing" className="underline underline-offset-4">
+              upgrade your plan
+            </Link>
+            .
+          </>
+        );
+        return;
+      }
       setRootError(error instanceof ApiError ? error.message : "Something went wrong. Please try again.");
     }
   }

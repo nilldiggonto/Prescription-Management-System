@@ -15,7 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { PasswordInput } from "@/components/auth/password-input";
 import { emailSchema } from "@/lib/validation";
 import { apiFetch, ApiError } from "@/lib/api";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth, type CurrentUser } from "@/lib/auth-context";
 
 const loginSchema = z.object({
   email: emailSchema,
@@ -43,12 +43,12 @@ export function LoginForm() {
   async function onSubmit(values: LoginValues) {
     setRootError(null);
     try {
-      await apiFetch("/auth/login", {
+      const loggedInUser = await apiFetch<CurrentUser>("/auth/login", {
         method: "POST",
         body: { email: values.email, password: values.password, remember_me: values.rememberMe },
       });
       await refresh();
-      router.push("/dashboard");
+      router.push(loggedInUser.role === "admin" ? "/admin" : "/dashboard");
     } catch (error) {
       if (error instanceof ApiError && error.status === 403) {
         toast.info("Please verify your email to continue.");

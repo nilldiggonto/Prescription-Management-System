@@ -57,3 +57,33 @@ export interface Prescription {
   medicines: Medicine[];
   created_at: string;
 }
+
+export type SubscriptionPlan = "free" | "pro" | "premium";
+export type SubscriptionStatus = "active" | "past_due" | "canceled" | "incomplete" | "trialing";
+
+export const PLAN_LABELS: Record<SubscriptionPlan, string> = {
+  free: "Free",
+  pro: "Pro",
+  premium: "Premium",
+};
+
+export interface Subscription {
+  plan: SubscriptionPlan;
+  status: SubscriptionStatus;
+  daily_limit: number | null;
+  used_today: number;
+  current_period_end: string | null;
+}
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  role: "doctor" | "admin";
+  is_verified: boolean;
+  is_active: boolean;
+  created_at: string;
+  plan: SubscriptionPlan;
+  status: SubscriptionStatus;
+  used_today: number;
+  current_period_end: string | null;
+}

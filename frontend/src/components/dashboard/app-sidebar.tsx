@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   ChevronsUpDownIcon,
+  CreditCardIcon,
   FilePlus2Icon,
   FileTextIcon,
   LayoutDashboardIcon,
@@ -33,7 +34,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/lib/auth-context";
+import { useSubscription } from "@/lib/subscription-context";
+import { PLAN_LABELS } from "@/lib/types";
 
 const NAV_PRESCRIPTIONS = [
   { href: "/dashboard/prescriptions/new", label: "New Prescription", icon: FilePlus2Icon },
@@ -49,6 +53,7 @@ function initials(email: string) {
 export function AppSidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const { subscription } = useSubscription();
 
   return (
     <Sidebar collapsible="icon">
@@ -129,6 +134,16 @@ export function AppSidebar() {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton
+                  isActive={pathname === "/dashboard/billing"}
+                  tooltip="Billing"
+                  render={<Link href="/dashboard/billing" />}
+                >
+                  <CreditCardIcon />
+                  <span>Billing</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
                   isActive={pathname === "/dashboard/settings"}
                   tooltip="Settings"
                   render={<Link href="/dashboard/settings" />}
@@ -156,8 +171,13 @@ export function AppSidebar() {
                     </Avatar>
                     <div className="grid flex-1 text-left leading-tight">
                       <span className="truncate text-sm font-medium">{user?.email}</span>
-                      <span className="truncate text-xs text-muted-foreground capitalize">
-                        {user?.role}
+                      <span className="mt-0.5 flex items-center gap-1.5 truncate text-xs text-muted-foreground">
+                        <span className="capitalize">{user?.role}</span>
+                        {subscription && (
+                          <Badge variant="outline" className="h-4 px-1.5 text-[10px]">
+                            {PLAN_LABELS[subscription.plan]}
+                          </Badge>
+                        )}
                       </span>
                     </div>
                     <ChevronsUpDownIcon className="ml-auto size-4 text-muted-foreground" />
