@@ -58,11 +58,12 @@ Current plan, today's usage, and the Free/Pro/Premium plan cards.
 <img width="1288" height="830" alt="image" src="https://github.com/user-attachments/assets/06f24f4b-9675-496e-a90b-e9964e1bd646" />
 
 <img width="1427" height="717" alt="image" src="https://github.com/user-attachments/assets/11f1f163-590f-43a2-b2f5-d25d7d26b0ee" />
+<img width="1907" height="853" alt="image" src="https://github.com/user-attachments/assets/e5070cb8-fa93-4ed0-bbf3-218dd3b0f238" />
 
-<img width="1898" height="846" alt="image" src="https://github.com/user-attachments/assets/ec21450e-3f20-4fcb-b5e3-ad3590000c16" />
 
 ## Admin dashboard
 
 Doctor counts, plan distribution, signup/prescription activity, and the full doctors table
 with plan override and suspend controls.
-<img width="1907" height="853" alt="image" src="https://github.com/user-attachments/assets/e5070cb8-fa93-4ed0-bbf3-218dd3b0f238" />
+<img width="1898" height="846" alt="image" src="https://github.com/user-attachments/assets/ec21450e-3f20-4fcb-b5e3-ad3590000c16" />
+
