@@ -65,6 +65,4 @@ Current plan, today's usage, and the Free/Pro/Premium plan cards.
 
 Doctor counts, plan distribution, signup/prescription activity, and the full doctors table
 with plan override and suspend controls.
-
-![Admin dashboard](<img width="1907" height="853" alt="image" src="https://github.com/user-attachments/assets/e5070cb8-fa93-4ed0-bbf3-218dd3b0f238" />
-)
+<img width="1907" height="853" alt="image" src="https://github.com/user-attachments/assets/e5070cb8-fa93-4ed0-bbf3-218dd3b0f238" />
