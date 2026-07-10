@@ -1,8 +1,5 @@
 # Preview
 
-A visual walkthrough of the app. Screenshots live in [`images/`](images/) — drop a file in
-with the matching name below and it'll show up here automatically.
-
 ## Landing page
 
 The marketing site — what a doctor sees before signing up.
