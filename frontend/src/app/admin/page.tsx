@@ -3,17 +3,19 @@
 import * as React from "react";
 import { toast } from "sonner";
 
+import { AdminStatsSection } from "@/components/admin/admin-stats";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { apiFetch, ApiError } from "@/lib/api";
-import { PLAN_LABELS, type AdminUser, type SubscriptionPlan } from "@/lib/types";
+import { PLAN_LABELS, type AdminStats, type AdminUser, type SubscriptionPlan } from "@/lib/types";
 
 const PLAN_OPTIONS: SubscriptionPlan[] = ["free", "pro", "premium"];
 
 export default function AdminUsersPage() {
   const [users, setUsers] = React.useState<AdminUser[] | null>(null);
+  const [stats, setStats] = React.useState<AdminStats | null>(null);
   const [pendingUserId, setPendingUserId] = React.useState<string | null>(null);
 
   const loadUsers = React.useCallback(async () => {
@@ -25,12 +27,22 @@ export default function AdminUsersPage() {
     }
   }, []);
 
+  const loadStats = React.useCallback(async () => {
+    try {
+      const data = await apiFetch<AdminStats>("/admin/stats");
+      setStats(data);
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : "Couldn't load dashboard stats.");
+    }
+  }, []);
+
   React.useEffect(() => {
-    // Fetching the user list on mount — synchronizing with the external API, which is
-    // exactly what effects are for.
+    // Fetching the user list and stats on mount — synchronizing with the external API, which
+    // is exactly what effects are for.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadUsers();
-  }, [loadUsers]);
+    void loadStats();
+  }, [loadUsers, loadStats]);
 
   async function handlePlanChange(userId: string, plan: SubscriptionPlan) {
     setPendingUserId(userId);
@@ -42,6 +54,7 @@ export default function AdminUsersPage() {
       });
       setUsers((current) => current?.map((user) => (user.id === userId ? updated : user)) ?? null);
       toast.success(`Plan updated to ${PLAN_LABELS[plan]}`);
+      void loadStats();
     } catch (error) {
       toast.error(error instanceof ApiError ? error.message : "Couldn't update plan.");
     } finally {
@@ -59,6 +72,7 @@ export default function AdminUsersPage() {
       });
       setUsers((current) => current?.map((u) => (u.id === user.id ? updated : u)) ?? null);
       toast.success(updated.is_active ? "Account reactivated" : "Account suspended");
+      void loadStats();
     } catch (error) {
       toast.error(error instanceof ApiError ? error.message : "Couldn't update account status.");
     } finally {
@@ -72,6 +86,10 @@ export default function AdminUsersPage() {
       <p className="mt-1 text-sm text-muted-foreground">
         View every doctor account, override their plan, or suspend access.
       </p>
+
+      <div className="mt-6">
+        <AdminStatsSection stats={stats} />
+      </div>
 
       <div className="mt-6">
         {users === null ? (

@@ -1,5 +1,6 @@
 import uuid
-from datetime import datetime, timezone
+from collections import Counter
+from datetime import datetime, timedelta, timezone
 
 import stripe
 from fastapi import HTTPException, status
@@ -12,7 +13,7 @@ from app.models.user import User, UserRole
 from app.repositories.prescription_repository import PrescriptionRepository
 from app.repositories.subscription_repository import SubscriptionRepository
 from app.repositories.user_repository import UserRepository
-from app.schemas.admin import AdminUserRead
+from app.schemas.admin import AdminStats, AdminUserRead, DailyCount
 from app.schemas.subscription import SubscriptionRead
 
 
@@ -85,13 +86,31 @@ class SubscriptionService:
                 "mode": "subscription",
                 "customer": subscription.stripe_customer_id,
                 "line_items": [{"price": price_id, "quantity": 1}],
-                "success_url": f"{self._settings.frontend_url}/dashboard/billing?checkout=success",
+                # {CHECKOUT_SESSION_ID} is a literal Stripe placeholder token, substituted by
+                # Stripe itself at redirect time — not an f-string variable.
+                "success_url": (
+                    f"{self._settings.frontend_url}/dashboard/billing"
+                    "?checkout=success&session_id={CHECKOUT_SESSION_ID}"
+                ),
                 "cancel_url": f"{self._settings.frontend_url}/dashboard/billing?checkout=cancel",
                 "client_reference_id": str(user.id),
                 "metadata": {"user_id": str(user.id), "plan": plan.value},
             }
         )
         return checkout_session.url
+
+    async def sync_from_checkout_session(self, user: User, session_id: str) -> SubscriptionRead:
+        """Eagerly reconcile right after the success redirect, rather than relying solely on
+        the webhook — locally, Stripe can only deliver webhooks if `stripe listen` is running,
+        so this keeps the dashboard correct even without it."""
+        _require_doctor(user)
+        checkout_session = await self._stripe.v1.checkout.sessions.retrieve_async(session_id)
+        if checkout_session.client_reference_id != str(user.id):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Checkout session does not belong to you")
+
+        data = checkout_session.to_dict() if hasattr(checkout_session, "to_dict") else checkout_session
+        await self._apply_checkout_session(data)
+        return await self.get_billing_info(user)
 
     async def create_portal_session(self, user: User) -> str:
         _require_doctor(user)
@@ -120,21 +139,7 @@ class SubscriptionService:
             data = data.to_dict()
 
         if event_type == "checkout.session.completed":
-            metadata = data.get("metadata") or {}
-            user_id = metadata.get("user_id")
-            plan_value = metadata.get("plan")
-            if not user_id or not plan_value:
-                return
-
-            subscription = await self._subscriptions.get_by_user_id(uuid.UUID(user_id))
-            if subscription is None:
-                return
-
-            subscription.stripe_customer_id = data["customer"]
-            subscription.stripe_subscription_id = data["subscription"]
-            subscription.plan = SubscriptionPlan(plan_value)
-            subscription.status = SubscriptionStatus.ACTIVE
-            await self._session.commit()
+            await self._apply_checkout_session(data)
 
         elif event_type == "customer.subscription.updated":
             subscription = await self._subscriptions.get_by_stripe_subscription_id(data["id"])
@@ -155,6 +160,23 @@ class SubscriptionService:
             subscription.plan = SubscriptionPlan.FREE
             subscription.status = SubscriptionStatus.CANCELED
             await self._session.commit()
+
+    async def _apply_checkout_session(self, data: dict) -> None:
+        metadata = data.get("metadata") or {}
+        user_id = metadata.get("user_id")
+        plan_value = metadata.get("plan")
+        if not user_id or not plan_value:
+            return
+
+        subscription = await self._subscriptions.get_by_user_id(uuid.UUID(user_id))
+        if subscription is None:
+            return
+
+        subscription.stripe_customer_id = data["customer"]
+        subscription.stripe_subscription_id = data["subscription"]
+        subscription.plan = SubscriptionPlan(plan_value)
+        subscription.status = SubscriptionStatus.ACTIVE
+        await self._session.commit()
 
     # --- Admin ---
 
@@ -215,6 +237,30 @@ class SubscriptionService:
             status=subscription.status,
             used_today=used_today,
             current_period_end=subscription.current_period_end,
+        )
+
+    async def get_admin_stats(self) -> AdminStats:
+        rows = await self.list_all_with_usage()
+        plan_counts = Counter(row.plan for row in rows)
+
+        since = _start_of_today_utc() - timedelta(days=13)
+        signups_by_day = await self._users.count_signups_by_day_since(since)
+        prescriptions_by_day = await self._prescriptions.count_by_day_since(since)
+        prescriptions_total = await self._prescriptions.count_all()
+
+        days = [since.date() + timedelta(days=offset) for offset in range(14)]
+        return AdminStats(
+            total_doctors=len(rows),
+            active_doctors=sum(1 for row in rows if row.is_active),
+            suspended_doctors=sum(1 for row in rows if not row.is_active),
+            unverified_doctors=sum(1 for row in rows if not row.is_verified),
+            plan_counts={plan: plan_counts.get(plan, 0) for plan in SubscriptionPlan},
+            prescriptions_today=sum(row.used_today for row in rows),
+            prescriptions_total=prescriptions_total,
+            signups_last_14_days=[DailyCount(date=day, count=signups_by_day.get(day, 0)) for day in days],
+            prescriptions_last_14_days=[
+                DailyCount(date=day, count=prescriptions_by_day.get(day, 0)) for day in days
+            ],
         )
 
 

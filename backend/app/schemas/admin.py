@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import BaseModel
 
@@ -26,3 +26,20 @@ class AdminSubscriptionUpdate(BaseModel):
 
 class AdminStatusUpdate(BaseModel):
     is_active: bool
+
+
+class DailyCount(BaseModel):
+    date: date
+    count: int
+
+
+class AdminStats(BaseModel):
+    total_doctors: int
+    active_doctors: int
+    suspended_doctors: int
+    unverified_doctors: int
+    plan_counts: dict[SubscriptionPlan, int]
+    prescriptions_today: int
+    prescriptions_total: int
+    signups_last_14_days: list[DailyCount]
+    prescriptions_last_14_days: list[DailyCount]

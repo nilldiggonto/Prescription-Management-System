@@ -98,3 +98,37 @@ async def test_admin_can_suspend_doctor_account(
     login_response = await client.post("/api/v1/auth/login", json={"email": DOCTOR_EMAIL, "password": PASSWORD})
     assert login_response.status_code == 403
     assert "suspended" in login_response.json()["detail"].lower()
+
+
+async def test_admin_stats_requires_admin_role(client: AsyncClient, fake_email_sender: FakeEmailSender):
+    await _login_doctor(client, fake_email_sender)
+    assert (await client.get("/api/v1/admin/stats")).status_code == 403
+
+
+async def test_admin_stats_reflects_plan_counts_and_trend_window(
+    client: AsyncClient, fake_email_sender: FakeEmailSender, db_session: AsyncSession
+):
+    user_id = await _login_doctor(client, fake_email_sender)
+
+    client.cookies.clear()
+    await _login_admin(client, db_session)
+    csrf_token = client.cookies.get("csrf_token")
+
+    await client.patch(
+        f"/api/v1/admin/users/{user_id}/subscription",
+        json={"plan": "pro"},
+        headers={"X-CSRF-Token": csrf_token},
+    )
+
+    response = await client.get("/api/v1/admin/stats")
+    assert response.status_code == 200
+    body = response.json()
+
+    assert body["total_doctors"] == 1
+    assert body["active_doctors"] == 1
+    assert body["suspended_doctors"] == 0
+    assert body["plan_counts"]["pro"] == 1
+    assert body["plan_counts"]["free"] == 0
+    assert len(body["signups_last_14_days"]) == 14
+    assert len(body["prescriptions_last_14_days"]) == 14
+    assert sum(day["count"] for day in body["signups_last_14_days"]) == 1

@@ -72,3 +72,15 @@ class PrescriptionRepository:
             .group_by(Prescription.doctor_id)
         )
         return dict(result.all())
+
+    async def count_by_day_since(self, since: datetime) -> dict[date, int]:
+        """Used by the admin stats trend chart — prescription volume across all doctors."""
+        day = func.date(Prescription.created_at)
+        result = await self._session.execute(
+            select(day, func.count()).where(Prescription.created_at >= since).group_by(day)
+        )
+        return dict(result.all())
+
+    async def count_all(self) -> int:
+        result = await self._session.execute(select(func.count()).select_from(Prescription))
+        return result.scalar_one()

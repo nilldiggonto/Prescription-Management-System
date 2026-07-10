@@ -2,7 +2,13 @@ import stripe
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 
 from app.api.deps import AppSettings, CurrentUser, DbSession, verify_csrf_token
-from app.schemas.subscription import CheckoutRequest, CheckoutResponse, PortalResponse, SubscriptionRead
+from app.schemas.subscription import (
+    CheckoutRequest,
+    CheckoutResponse,
+    PortalResponse,
+    SubscriptionRead,
+    SyncCheckoutRequest,
+)
 from app.services.subscription_service import SubscriptionService
 
 router = APIRouter(prefix="/billing", tags=["billing"])
@@ -11,6 +17,13 @@ router = APIRouter(prefix="/billing", tags=["billing"])
 @router.get("/me", response_model=SubscriptionRead)
 async def get_my_subscription(current_user: CurrentUser, session: DbSession, settings: AppSettings) -> SubscriptionRead:
     return await SubscriptionService(session, settings).get_billing_info(current_user)
+
+
+@router.post("/sync-checkout", response_model=SubscriptionRead, dependencies=[Depends(verify_csrf_token)])
+async def sync_checkout_session(
+    payload: SyncCheckoutRequest, current_user: CurrentUser, session: DbSession, settings: AppSettings
+) -> SubscriptionRead:
+    return await SubscriptionService(session, settings).sync_from_checkout_session(current_user, payload.session_id)
 
 
 @router.post("/checkout", response_model=CheckoutResponse, dependencies=[Depends(verify_csrf_token)])

@@ -1,6 +1,7 @@
 import uuid
+from datetime import date, datetime
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.user import User, UserRole
@@ -27,3 +28,13 @@ class UserRepository:
     async def list_by_role(self, role: UserRole) -> list[User]:
         result = await self._session.execute(select(User).where(User.role == role).order_by(User.created_at))
         return list(result.scalars().all())
+
+    async def count_signups_by_day_since(self, since: datetime) -> dict[date, int]:
+        """Used by the admin stats trend chart — doctor signups over time."""
+        day = func.date(User.created_at)
+        result = await self._session.execute(
+            select(day, func.count())
+            .where(User.role == UserRole.DOCTOR, User.created_at >= since)
+            .group_by(day)
+        )
+        return dict(result.all())

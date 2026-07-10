@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.deps import AppSettings, CurrentAdmin, DbSession, verify_csrf_token
 from app.repositories.user_repository import UserRepository
-from app.schemas.admin import AdminStatusUpdate, AdminSubscriptionUpdate, AdminUserRead
+from app.schemas.admin import AdminStats, AdminStatusUpdate, AdminSubscriptionUpdate, AdminUserRead
 from app.services.subscription_service import SubscriptionService
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -13,6 +13,11 @@ router = APIRouter(prefix="/admin", tags=["admin"])
 @router.get("/users", response_model=list[AdminUserRead])
 async def list_users(current_admin: CurrentAdmin, session: DbSession, settings: AppSettings) -> list[AdminUserRead]:
     return await SubscriptionService(session, settings).list_all_with_usage()
+
+
+@router.get("/stats", response_model=AdminStats)
+async def get_stats(current_admin: CurrentAdmin, session: DbSession, settings: AppSettings) -> AdminStats:
+    return await SubscriptionService(session, settings).get_admin_stats()
 
 
 @router.patch(

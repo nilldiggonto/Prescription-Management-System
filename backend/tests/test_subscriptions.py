@@ -1,3 +1,4 @@
+import stripe
 from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -107,3 +108,61 @@ async def test_premium_plan_is_never_blocked(
 
     for _ in range(25):
         assert await _create_prescription(client, csrf_token) == 201
+
+
+class _FakeCheckoutSession:
+    def __init__(self, client_reference_id: str, data: dict):
+        self.client_reference_id = client_reference_id
+        self._data = data
+
+    def to_dict(self) -> dict:
+        return self._data
+
+
+async def test_sync_checkout_updates_plan_after_stripe_redirect(
+    client: AsyncClient, fake_email_sender: FakeEmailSender, monkeypatch
+):
+    csrf_token = await _login_with_profile(client, fake_email_sender)
+    me_response = await client.get("/api/v1/auth/me")
+    user_id = me_response.json()["id"]
+
+    fake_session = _FakeCheckoutSession(
+        client_reference_id=user_id,
+        data={"customer": "cus_sync1", "subscription": "sub_sync1", "metadata": {"user_id": user_id, "plan": "pro"}},
+    )
+
+    async def fake_retrieve_async(self, session, params=None, options=None):
+        return fake_session
+
+    monkeypatch.setattr(stripe.checkout.SessionService, "retrieve_async", fake_retrieve_async)
+
+    response = await client.post(
+        "/api/v1/billing/sync-checkout",
+        json={"session_id": "cs_test_abc"},
+        headers={"X-CSRF-Token": csrf_token},
+    )
+    assert response.status_code == 200
+    assert response.json()["plan"] == "pro"
+
+
+async def test_sync_checkout_rejects_session_belonging_to_another_user(
+    client: AsyncClient, fake_email_sender: FakeEmailSender, monkeypatch
+):
+    csrf_token = await _login_with_profile(client, fake_email_sender)
+
+    fake_session = _FakeCheckoutSession(
+        client_reference_id="00000000-0000-0000-0000-000000000000",
+        data={"customer": "cus_x", "subscription": "sub_x", "metadata": {}},
+    )
+
+    async def fake_retrieve_async(self, session, params=None, options=None):
+        return fake_session
+
+    monkeypatch.setattr(stripe.checkout.SessionService, "retrieve_async", fake_retrieve_async)
+
+    response = await client.post(
+        "/api/v1/billing/sync-checkout",
+        json={"session_id": "cs_test_other"},
+        headers={"X-CSRF-Token": csrf_token},
+    )
+    assert response.status_code == 403

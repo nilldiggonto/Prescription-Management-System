@@ -67,6 +67,14 @@ export const PLAN_LABELS: Record<SubscriptionPlan, string> = {
   premium: "Premium",
 };
 
+export const STATUS_LABELS: Record<SubscriptionStatus, string> = {
+  active: "Active",
+  past_due: "Payment past due",
+  canceled: "Canceled",
+  incomplete: "Incomplete",
+  trialing: "Trialing",
+};
+
 export interface Subscription {
   plan: SubscriptionPlan;
   status: SubscriptionStatus;
@@ -86,4 +94,21 @@ export interface AdminUser {
   status: SubscriptionStatus;
   used_today: number;
   current_period_end: string | null;
+}
+
+export interface DailyCount {
+  date: string;
+  count: number;
+}
+
+export interface AdminStats {
+  total_doctors: number;
+  active_doctors: number;
+  suspended_doctors: number;
+  unverified_doctors: number;
+  plan_counts: Record<SubscriptionPlan, number>;
+  prescriptions_today: number;
+  prescriptions_total: number;
+  signups_last_14_days: DailyCount[];
+  prescriptions_last_14_days: DailyCount[];
 }

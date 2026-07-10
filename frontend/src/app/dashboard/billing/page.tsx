@@ -2,14 +2,14 @@
 
 import * as React from "react";
 import { useSearchParams } from "next/navigation";
-import { CheckIcon } from "lucide-react";
+import { CheckIcon, CreditCardIcon, TriangleAlertIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useSubscription } from "@/lib/subscription-context";
 import { apiFetch, ApiError } from "@/lib/api";
-import { PLAN_LABELS, type SubscriptionPlan } from "@/lib/types";
+import { PLAN_LABELS, STATUS_LABELS, type SubscriptionPlan } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 interface Tier {
@@ -58,13 +58,29 @@ function BillingPageContent() {
 
   React.useEffect(() => {
     const checkout = searchParams.get("checkout");
+    const sessionId = searchParams.get("session_id");
     if (checkout === "success") {
-      toast.success("Subscription updated — thanks!");
-      void refresh();
+      if (sessionId) {
+        // Reconcile eagerly against Stripe using the Checkout Session ID rather than just
+        // re-fetching our DB — the webhook that would normally do this update may not have
+        // been delivered yet (or at all, if no webhook listener is running locally).
+        apiFetch("/billing/sync-checkout", { method: "POST", csrf: true, body: { session_id: sessionId } })
+          .then(() => {
+            toast.success("Subscription updated — thanks!");
+            void refresh();
+          })
+          .catch(() => {
+            toast.success("Payment received — refreshing your plan…");
+            void refresh();
+          });
+      } else {
+        toast.success("Subscription updated — thanks!");
+        void refresh();
+      }
     } else if (checkout === "cancel") {
       toast.info("Checkout canceled — you're still on your previous plan.");
     }
-    // Only react to the query param changing, not every `refresh` identity change.
+    // Only react to the query params changing, not every `refresh` identity change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
@@ -112,21 +128,50 @@ function BillingPageContent() {
       </div>
 
       <div className="mt-6 rounded-xl border bg-card p-6">
+        {subscription.plan !== "free" && subscription.status !== "active" && (
+          <div className="mb-4 flex items-start gap-2 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+            <TriangleAlertIcon className="mt-0.5 size-4 shrink-0" />
+            <span>
+              {subscription.status === "past_due"
+                ? "Your last payment failed. Update your payment method to avoid losing access to your plan."
+                : `Your subscription is ${STATUS_LABELS[subscription.status].toLowerCase()}.`}{" "}
+              <button
+                type="button"
+                onClick={() => void handleManageBilling()}
+                className="font-medium underline underline-offset-2"
+              >
+                Manage billing
+              </button>
+            </span>
+          </div>
+        )}
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Current plan</span>
-              <Badge>{PLAN_LABELS[subscription.plan]}</Badge>
-            </div>
-            <p className="mt-2 text-2xl font-semibold tracking-tight">
-              {subscription.used_today}
-              {subscription.daily_limit !== null && (
-                <span className="text-base font-normal text-muted-foreground"> / {subscription.daily_limit}</span>
-              )}
-              <span className="ml-2 text-sm font-normal text-muted-foreground">
-                prescriptions today{subscription.daily_limit === null && " (unlimited)"}
+              <span className="flex size-9 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <CreditCardIcon className="size-4" />
               </span>
-            </p>
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-heading text-lg font-semibold">
+                    {subscription.plan === "free" ? "Free plan" : `${PLAN_LABELS[subscription.plan]} plan`}
+                  </span>
+                  {subscription.plan !== "free" && subscription.status === "active" && (
+                    <Badge variant="secondary">Active</Badge>
+                  )}
+                </div>
+                {subscription.plan !== "free" && subscription.current_period_end && (
+                  <p className="text-xs text-muted-foreground">
+                    Renews on{" "}
+                    {new Date(subscription.current_period_end).toLocaleDateString(undefined, {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}
+                  </p>
+                )}
+              </div>
+            </div>
           </div>
           {subscription.plan !== "free" && (
             <Button variant="outline" onClick={() => void handleManageBilling()} disabled={isPortalLoading}>
@@ -134,16 +179,28 @@ function BillingPageContent() {
             </Button>
           )}
         </div>
-        {subscription.daily_limit !== null && (
-          <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-muted">
-            <div
-              className="h-full rounded-full bg-primary transition-all"
-              style={{
-                width: `${Math.min(100, (subscription.used_today / subscription.daily_limit) * 100)}%`,
-              }}
-            />
-          </div>
-        )}
+
+        <div className="mt-5 border-t pt-4">
+          <p className="text-2xl font-semibold tracking-tight">
+            {subscription.used_today}
+            {subscription.daily_limit !== null && (
+              <span className="text-base font-normal text-muted-foreground"> / {subscription.daily_limit}</span>
+            )}
+            <span className="ml-2 text-sm font-normal text-muted-foreground">
+              prescriptions today{subscription.daily_limit === null && " (unlimited)"}
+            </span>
+          </p>
+          {subscription.daily_limit !== null && (
+            <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-primary transition-all"
+                style={{
+                  width: `${Math.min(100, (subscription.used_today / subscription.daily_limit) * 100)}%`,
+                }}
+              />
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-3">

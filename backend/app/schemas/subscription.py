@@ -26,3 +26,7 @@ class CheckoutResponse(BaseModel):
 
 class PortalResponse(BaseModel):
     portal_url: str
+
+
+class SyncCheckoutRequest(BaseModel):
+    session_id: str
